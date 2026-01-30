@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque Pro - V3</title>
+    <style>
+        :root { --primary: #2c3e50; --secondary: #27ae60; --danger: #e74c3c; --accent: #3498db; --light: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: #eef2f3; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Menu Superior */
+        nav { background: var(--primary); color: white; padding: 10px 20px; display: flex; gap: 15px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        nav h1 { margin: 0; font-size: 1.2rem; flex-grow: 1; }
+        nav button { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+        nav button.active { background: var(--secondary); border-color: var(--secondary); }
+
+        .container { flex: 1; padding: 20px; overflow-y: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
+        /* Inputs e Tabelas */
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f4f7f6; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        
+        .alerta-estoque { background: #fff3cd; color: #856404; font-weight: bold; border-left: 4px solid #ffc107; }
+        .critico { background: #f8d7da !important; color: #721c24; border-left: 4px solid #dc3545; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .badge-cod { background: #ebedef; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        .btn-acao { background: var(--accent); color: white; border: none; }
+        .btn-del { background: var(--danger); }
+    </style>
+</head>
+<body>
+
+<nav>
+    <h1>📦 Gestão de Estoque</h1>
+    <button onclick="mudarAba('estoque')" id="btn-estoque" class="active">Painel Geral</button>
+    <button onclick="mudarAba('saida')" id="btn-saida">Vendas / Saídas</button>
+    <button onclick="mudarAba('cadastro')" id="btn-cadastro">Cadastrar Produto</button>
+    <button onclick="mudarAba('config')" id="btn-config">Unidades & Backup</button>
+</nav>
+
+<div class="container">
+    
+    <div id="estoque" class="tab-content active">
+        <div class="card">
+            <h3>Filtro e Pesquisa</h3>
+            <input type="text" id="busca" placeholder="Pesquisar por nome ou código..." onkeyup="renderizarEstoque()" style="width: 100%;">
+        </div>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cód</th>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Unidade</th>
+                        <th>Vlr Unit.</th>
+                        <th>Entradas</th>
+                        <th>Saídas</th>
+                        <th>Estoque Atual</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoEstoque"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="saida" class="tab-content">
+        <div class="card">
+            <h3>Registrar Nova Saída / Venda</h3>
+            <div class="form-row">
+                <select id="selProdutoSaida"></select>
+                <input type="number" id="qtdSaida" placeholder="Quantidade">
+                <input type="text" id="obsSaida" placeholder="Observação (Ex: Venda p/ João)">
+                <button onclick="registrarSaida()" style="background: var(--danger)">Registrar Saída</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Histórico Recente de Movimentações</h3>
+            <table id="tabelaHistorico">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Tipo</th>
+                        <th>Produto</th>
+                        <th>Qtd</th>
+                        <th>Obs</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoHistorico"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="cadastro" class="tab-content">
+        <div class="card">
+            <h3>Novo Produto</h3>
+            <div class="form-row">
+                <input type="text" id="nome" placeholder="Nome do Produto">
+                <select id="categoria">
+                    <option value="Material de Consumo">Material de Consumo</option>
+                    <option value="Medicamentos">Medicamentos</option>
+                    <option value="Correlatos">Correlatos</option>
+                </select>
+                <select id="unidadeSelect"></select>
+                <input type="number" id="valor" placeholder="Valor Unitário (R$)" step="0.01">
+                <input type="number" id="estoqueInicial" placeholder="Estoque Inicial">
+                <button onclick="adicionarProduto()">Cadastrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="config" class="tab-content">
+        <div class="card">
+            <h3>Gerenciar Unidades</h3>
+            <div class="form-row">
+                <input type="text" id="novaUnidade" placeholder="Ex: CX, FRASCO, LITRO">
+                <button onclick="adicionarUnidade()">Adicionar Unidade</button>
+            </div>
+            <div id="listaUnidades" style="margin-top: 10px;"></div>
+        </div>
+        <div class="card">
+            <h3>Dados e Backup</h3>
+            <button onclick="exportarBackup()">💾 Baixar Backup (.json)</button>
+            <button onclick="document.getElementById('inputBackup').click()">📂 Restaurar Backup</button>
+            <input type="file" id="inputBackup" style="display:none" onchange="importarBackup(this)">
+            <button onclick="resetarSistema()" class="btn-del" style="margin-left: 20px;">⚠️ Apagar Tudo</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Banco de dados local
+    let db = JSON.parse(localStorage.getItem('sistema_estoque_v3')) || {
+        produtos: [],
+        movimentacoes: [],
+        unidades: ['UN', 'CX', 'KG', 'PCT']
+    };
+
+    function salvar() {
+        localStorage.setItem('sistema_estoque_v3', JSON.stringify(db));
+        renderizarEstoque();
+        atualizarSelects();
+        renderizarHistorico();
+    }
+
+    function mudarAba(id) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('btn-'+id).classList.add('active');
+    }
+
+    function gerarCodigo() {
+        return '#' + Math.random().toString(36).substr(2, 5).toUpperCase();
+    }
+
+    // --- PRODUTOS ---
+    function adicionarProduto() {
+        const nome = document.getElementById('nome').value;
+        const categoria = document.getElementById('categoria').value;
+        const unidade = document.getElementById('unidadeSelect').value;
+        const valor = parseFloat(document.getElementById('valor').value) || 0;
+        const inicial = parseInt(document.getElementById('estoqueInicial').value) || 0;
+
+        if(!nome) return alert("Nome obrigatório!");
+
+        const novoProduto = { id: Date.now(), codigo: gerarCodigo(), nome, categoria, unidade, valor, inicial };
+        db.produtos.push(novoProduto);
+        
+        // Se houver estoque inicial, registra como movimentação de entrada
+        if(inicial > 0) {
+            db.movimentacoes.push({ idMov: Date.now(), prodId: novoProduto.id, tipo: 'ENTRADA', qtd: inicial, obs: 'Estoque Inicial', data: new Date().toLocaleString() });
+        }
+
+        document.getElementById('nome').value = '';
+        salvar();
+        alert("Produto cadastrado!");
+    }
+
+    // --- MOVIMENTAÇÕES ---
+    function registrarSaida() {
+        const prodId = parseInt(document.getElementById('selProdutoSaida').value);
+        const qtd = parseInt(document.getElementById('qtdSaida').value);
+        const obs = document.getElementById('obsSaida').value;
+
+        if(!prodId || !qtd) return alert("Selecione o produto e a quantidade!");
+
+        db.movimentacoes.push({
+            idMov: Date.now(),
+            prodId: prodId,
+            tipo: 'SAÍDA',
+            qtd: qtd,
+            obs: obs,
+            data: new Date().toLocaleString()
+        });
+
+        document.getElementById('qtdSaida').value = '';
+        document.getElementById('obsSaida').value = '';
+        salvar();
+    }
+
+    // --- RENDERIZAÇÃO ---
+    function calcularSaldo(prodId) {
+        const movs = db.movimentacoes.filter(m => m.prodId === prodId);
+        const entradas = movs.filter(m => m.tipo === 'ENTRADA').reduce((a, b) => a + b.qtd, 0);
+        const saidas = movs.filter(m => m.tipo === 'SAÍDA').reduce((a, b) => a + b.qtd, 0);
+        return { entradas, saidas, total: entradas - saidas };
+    }
+
+    function renderizarEstoque() {
+        const corpo = document.getElementById('corpoEstoque');
+        const busca = document.getElementById('busca').value.toLowerCase();
+        corpo.innerHTML = '';
+
+        db.produtos.forEach(p => {
+            const saldo = calcularSaldo(p.id);
+            if(!p.nome.toLowerCase().includes(busca) && !p.codigo.toLowerCase().includes(busca)) return;
+
+            const percentual = (saldo.total / p.inicial) * 100;
+            let classeFila = '';
+            if(p.inicial > 0 && percentual <= 30) classeFila = 'critico';
+            else if(p.inicial > 0 && percentual <= 50) classeFila = 'alerta-estoque';
+
+            corpo.innerHTML += `
+                <tr class="${classeFila}">
+                    <td><span class="badge-cod">${p.codigo}</span></td>
+                    <td><strong>${p.nome}</strong></td>
+                    <td>${p.categoria}</td>
+                    <td>${p.unidade}</td>
+                    <td>R$ ${p.valor.toFixed(2)}</td>
+                    <td>${saldo.entradas}</td>
+                    <td>${saldo.saidas}</td>
+                    <td>${saldo.total} ${percentual <= 30 ? '⚠️' : ''}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderizarHistorico() {
+        const corpo = document.getElementById('corpoHistorico');
+        corpo.innerHTML = '';
+        [...db.movimentacoes].reverse().slice(0, 10).forEach(m => {
+            const p = db.produtos.find(prod => prod.id === m.prodId);
+            corpo.innerHTML += `
+                <tr>
+                    <td>${m.data}</td>
+                    <td style="color:${m.tipo === 'SAÍDA' ? 'red' : 'green'}">${m.tipo}</td>
+                    <td>${p ? p.nome : 'Excluído'}</td>
+                    <td>${m.qtd}</td>
+                    <td>${m.obs}</td>
+                    <td><button class="btn-del" onclick="removerMov(${m.idMov})">X</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    function removerMov(id) {
+        if(confirm("Estornar esta movimentação?")) {
+            db.movimentacoes = db.movimentacoes.filter(m => m.idMov !== id);
+            salvar();
+        }
+    }
+
+    // --- UNIDADES ---
+    function adicionarUnidade() {
+        const u = document.getElementById('novaUnidade').value.toUpperCase();
+        if(u && !db.unidades.includes(u)) {
+            db.unidades.push(u);
+            document.getElementById('novaUnidade').value = '';
+            salvar();
+        }
+    }
+
+    function atualizarSelects() {
+        const selU = document.getElementById('unidadeSelect');
+        const selP = document.getElementById('selProdutoSaida');
+        
+        selU.innerHTML = db.unidades.map(u => `<option value="${u}">${u}</option>`).join('');
+        selP.innerHTML = '<option value="">Selecione o produto...</option>' + 
+                         db.produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+        
+        const listaU = document.getElementById('listaUnidades');
+        listaU.innerHTML = db.unidades.map(u => `<span class="badge-cod" style="margin-right:5px">${u}</span>`).join('');
+    }
+
+    // --- BACKUP ---
+    function exportarBackup() {
+        const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        const link = document.createElement('a');
+        link.setAttribute("href", data);
+        link.setAttribute("download", "backup_estoque_v3.json");
+        link.click();
+    }
+
+    function importarBackup(input) {
+        const reader = new FileReader();
+        reader.onload = () => { db = JSON.parse(reader.result); salvar(); };
+        reader.readAsText(input.files[0]);
+    }
+
+    function resetarSistema() {
+        if(confirm("CUIDADO! Isso apagará todos os dados. Tem certeza?")) {
+            db = { produtos: [], movimentacoes: [], unidades: ['UN', 'CX', 'KG', 'PCT'] };
+            salvar();
+        }
+    }
+
+    // Inicialização
+    atualizarSelects();
+    renderizarEstoque();
+    renderizarHistorico();
+</script>
+
+</body>
+</html>

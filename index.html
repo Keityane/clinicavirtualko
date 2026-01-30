@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clínica Veterinária Keityane Oliveira</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f7f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Estilo do Card */
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 350px;
+        }
+
+        h2 { color: #2d5a27; margin-bottom: 1.5rem; }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        button:hover { background-color: #45a049; }
+
+        /* Dashboard (Escondido inicialmente) */
+        #dashboard { display: none; width: 500px; }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-link {
+            background-color: #2d5a27;
+            text-decoration: none;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            display: block;
+        }
+
+        .btn-link:hover { background-color: #1e3d1a; }
+
+        .full-width { grid-column: span 2; }
+    </style>
+</head>
+<body>
+
+    <div id="login-section" class="container">
+        <h2>Acesso Restrito</h2>
+        <input type="text" id="usuario" placeholder="Usuário">
+        <input type="password" id="senha" placeholder="Senha">
+        <button onclick="logar()">Entrar</button>
+        <p id="erro" style="color: red; display: none; margin-top: 10px;">Acesso Negado!</p>
+    </div>
+
+    <div id="dashboard" class="container">
+        <h2>Clínica Veterinária <br> Keityane Oliveira</h2>
+        <p>Bem-vinda de volta!</p>
+        
+        <div class="menu-grid">
+            <a href="atendimentos.html" class="btn-link">Atendimentos</a>
+            <a href="Estoque.html" class="btn-link">Estoque</a>
+            <a href="outros.html" class="btn-link full-width">Outros Serviços</a>
+        </div>
+        
+        <button onclick="logout()" style="margin-top: 20px; background-color: #d9534f;">Sair</button>
+    </div>
+
+    <script>
+        function logar() {
+            const user = document.getElementById('usuario').value;
+            const pass = document.getElementById('senha').value;
+
+            // Validação solicitada
+            if (user === "KEITYANE" && pass === "2026") {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+            } else {
+                const erro = document.getElementById('erro');
+                erro.style.display = 'block';
+                setTimeout(() => erro.style.display = 'none', 3000);
+            }
+        }
+
+        function logout() {
+            location.reload(); // Recarrega a página para voltar ao login
+        }
+    </script>
+</body>
+</html>
