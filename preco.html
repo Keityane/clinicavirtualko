@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora de Precificação Veterinária</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f9f9; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 350px; border-top: 5px solid #2c7a7b; }
+        h2 { color: #2c7a7b; text-align: center; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #444; }
+        input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #2c7a7b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #285e61; }
+        .resultado { margin-top: 20px; padding: 15px; background-color: #e6fffa; border-radius: 6px; text-align: center; display: none; }
+        .resultado span { font-size: 20px; font-weight: bold; color: #2c7a7b; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Precificação Vet 🐾</h2>
+    
+    <label>Preço de Custo (R$)</label>
+    <input type="number" id="custo" placeholder="Ex: 50.00">
+
+    <label>Margem de Lucro (%)</label>
+    <input type="number" id="lucro" placeholder="Ex: 100">
+
+    <label>Impostos/Taxas (%)</label>
+    <input type="number" id="taxa" placeholder="Ex: 5">
+
+    <button onclick="calcular()">Calcular Preço de Venda</button>
+
+    <div id="resultadoBox" class="resultado">
+        Preço Sugerido:<br>
+        <span id="valorFinal">R$ 0,00</span>
+    </div>
+</div>
+
+<script>
+    function calcular() {
+        const custo = parseFloat(document.getElementById('custo').value);
+        const lucro = parseFloat(document.getElementById('lucro').value);
+        const taxa = parseFloat(document.getElementById('taxa').value);
+
+        if (isNaN(custo) || isNaN(lucro)) {
+            alert("Por favor, preencha o custo e a margem.");
+            return;
+        }
+
+        // Fórmula simples: Custo + % de Lucro + % de Imposto
+        const valorLucro = custo * (lucro / 100);
+        const valorTaxa = custo * (taxa / 100 || 0);
+        const total = custo + valorLucro + valorTaxa;
+
+        document.getElementById('valorFinal').innerText = total.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+        document.getElementById('resultadoBox').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
